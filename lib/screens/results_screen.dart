@@ -7,7 +7,7 @@ import 'package:printing/printing.dart';
 import '../models/ue.dart';
 import '../utils/gpa_calculator.dart';
 import '../widgets/glass_container.dart';
-import 'setup_screen.dart';
+import 'home_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
   final List<UE> ues;
@@ -42,37 +42,114 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Future<void> _exportTranscript() async {
     final pdf = pw.Document();
 
+    final primaryColor = PdfColor.fromInt(0xFF1D976C);
+    final accentColor = PdfColor.fromInt(0xFF2C5364);
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Header(
-                level: 0,
-                child: pw.Text("Official Transcript - GPA Pro", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 24)),
+              // Header section
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text("BGMAX", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 32, color: primaryColor)),
+                      pw.Text("Academic Performance Report", style: pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text("Date: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"),
+                      pw.Text("Status: Official"),
+                    ],
+                  ),
+                ],
               ),
               pw.SizedBox(height: 20),
-              pw.Text("Student: $username", style: const pw.TextStyle(fontSize: 18)),
-              pw.Text("Matricule: $matricule", style: const pw.TextStyle(fontSize: 18)),
-              pw.SizedBox(height: 10),
-              pw.Text("Ranking: $ranking", style: const pw.TextStyle(fontSize: 18)),
-              pw.Text("Total GPA: ${gpa.toStringAsFixed(2)} / 4.0", style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              pw.Divider(thickness: 2, color: primaryColor),
               pw.SizedBox(height: 30),
+
+              // Student Info
+              pw.Container(
+                padding: const pw.EdgeInsets.all(15),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text("STUDENT NAME", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        pw.Text(username ?? 'N/A', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
+                        pw.SizedBox(height: 10),
+                        pw.Text("MATRICULE", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        pw.Text(matricule ?? 'N/A', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text("OVERALL GPA", style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        pw.Text(gpa.toStringAsFixed(2), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 32, color: primaryColor)),
+                        pw.Text("RANK: $ranking", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: accentColor)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 40),
+
+              // Table
+              pw.Text("SUBJECT RECORD", style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: accentColor)),
+              pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
                 context: context,
-                headers: ['U.E. Name', 'Mark (/100)', 'Grade', 'Credits', 'Quality Pts'],
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: pw.BoxDecoration(color: primaryColor),
+                cellAlignment: pw.Alignment.centerLeft,
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(3),
+                  1: const pw.FlexColumnWidth(1),
+                  2: const pw.FlexColumnWidth(1),
+                  3: const pw.FlexColumnWidth(1),
+                  4: const pw.FlexColumnWidth(1),
+                },
+                headers: ['U.E. Name', 'Score', 'Grade', 'Credits', 'Points'],
                 data: widget.ues.map((ue) {
                   final result = GpaCalculator.getGradeAndGpa(ue.mark);
                   return [
                     ue.name,
-                    ue.mark.toString(),
+                    ue.mark.toStringAsFixed(1),
                     result.grade,
                     ue.credits.toString(),
                     (result.gpaItemLevel * ue.credits).toStringAsFixed(1),
                   ];
                 }).toList(),
+              ),
+
+              pw.Spacer(),
+              
+              // Footer
+              pw.Divider(color: PdfColors.grey300),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text("Generated by BGMax Student Assistant", style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic, color: PdfColors.grey500)),
+                  pw.Text("Page 1 of 1", style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                ],
               ),
             ],
           );
@@ -125,7 +202,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const SetupScreen()),
+                    MaterialPageRoute(builder: (context) => const HomeScreen()),
                     (route) => false,
                   );
                 },

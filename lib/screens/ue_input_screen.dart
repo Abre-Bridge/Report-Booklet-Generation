@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/ue.dart';
 import '../widgets/glass_container.dart';
 import 'results_screen.dart';
+import '../utils/sync_service.dart';
 
 class UeInputScreen extends StatefulWidget {
   final int ueCount;
@@ -49,6 +50,10 @@ class _UeInputScreenState extends State<UeInputScreen> {
             credits: int.parse(_creditControllers[i].text),
           ));
         }
+
+        // Trigger background sync
+        SyncService.saveAndTriggerSync(ues);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => ResultsScreen(ues: ues)),

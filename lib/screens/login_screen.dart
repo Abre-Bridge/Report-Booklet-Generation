@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/glass_container.dart';
-import 'setup_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const SetupScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     }
@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Icon(Icons.school, size: 80, color: Colors.white.withOpacity(0.9)),
                       const SizedBox(height: 16),
                       Text(
-                        'Welcome to GPA Pro',
+                        'Welcome to BGMax',
                         style: GoogleFonts.poppins(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
