@@ -3,12 +3,8 @@ name: Flutter Android Build
 on:
   push:
     branches: [main, master, develop]
-    paths:
-      - "client/**"
   pull_request:
     branches: [main, master]
-    paths:
-      - "client/**"
   workflow_dispatch:
 
 jobs:
@@ -16,10 +12,6 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
-    defaults:
-      run:
-        working-directory: client
 
     steps:
       - name: Checkout repository
@@ -39,13 +31,16 @@ jobs:
           channel: "stable"
           cache: true
 
+      # ---------------------------
+      # Cache dependencies
+      # ---------------------------
       - name: Cache pub dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.pub-cache
-            client/.dart_tool
-          key: pub-${{ runner.os }}-${{ hashFiles('client/pubspec.lock') }}
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
       - name: Cache Gradle
@@ -54,16 +49,22 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('client/android/gradle/wrapper/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
+      # ---------------------------
+      # ENV FILE (root)
+      # ---------------------------
       - name: Create .env file
         run: |
           touch .env
-          [ -n "${{ secrets.API_BASE_URL }}" ]      && echo "API_BASE_URL=${{ secrets.API_BASE_URL }}"           >> .env || true
-          [ -n "${{ secrets.SUPABASE_URL }}" ]      && echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"           >> .env || true
+          [ -n "${{ secrets.API_BASE_URL }}" ] && echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env || true
+          [ -n "${{ secrets.SUPABASE_URL }}" ] && echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env || true
           [ -n "${{ secrets.SUPABASE_ANON_KEY }}" ] && echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env || true
 
+      # ---------------------------
+      # Firebase / Google Services
+      # ---------------------------
       - name: Write google-services.json
         run: |
           if [ -n "$GSVC" ]; then
@@ -75,6 +76,9 @@ jobs:
         env:
           GSVC: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
+      # ---------------------------
+      # Keystore
+      # ---------------------------
       - name: Decode and place keystore
         run: |
           if [ -n "$KS_B64" ]; then
@@ -91,6 +95,9 @@ jobs:
         env:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
 
+      # ---------------------------
+      # Flutter build steps
+      # ---------------------------
       - name: Flutter doctor
         run: flutter doctor -v
         continue-on-error: true
@@ -114,32 +121,23 @@ jobs:
         run: flutter build apk --debug --verbose
 
       - name: Build release APK
-        continue-on-error: true
-        run: |
-          if [ -f "android/key.properties" ]; then
-            echo "Building signed release APK..."
-            flutter build apk --release --verbose
-          else
-            echo "Building unsigned release APK..."
-            flutter build apk --release --verbose
-          fi
+        run: flutter build apk --release --verbose
 
-      - name: Locate APKs
-        if: always()
-        run: find build/app/outputs -name "*.apk" 2>/dev/null || echo "No APKs found"
-
+      # ---------------------------
+      # Artifacts
+      # ---------------------------
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk-${{ github.sha }}
-          path: client/build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 7
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk-${{ github.sha }}
-          path: client/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
           if-no-files-found: warn
 
